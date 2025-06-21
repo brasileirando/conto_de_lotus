@@ -1,0 +1,654 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>O Conto do Dragão Sussurrante e a Princesa Lótus</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700&family=Noto+Serif+SC:wght@400;700&family=Merriweather:wght@400;700&display=swap" rel="stylesheet">
+    <!-- Chosen Palette: Imperial Red & Golden Harmony -->
+    <!-- Application Structure Plan: The SPA follows a narrative flow, divided into thematic sections that unveil the story of "The Whispering Dragon and the Lotus Princess." It begins with an atmospheric full-screen hero section. Subsequent content blocks are designed to integrate interactive curiosity reveals directly within the textual narrative. Key sections include: "The Ancient Realm," "The Lotus Princess," "The Whispering Dragon," "The Quest for Harmony," and "Ancient Wisdom." Interactivity is embedded through clickable "artifacts" that reveal random lore and an LLM-powered "Dragon's Prophecy" generator. This structure aims for a captivating storytelling experience, leveraging visual design and dynamic content revelation without explicit scroll indicators. -->
+    <!-- Visualization & Content Choices: The animated background features subtle, flowing particles in shades of red and gold, evoking a mystical, ethereal flow (Method: JS Canvas API). Textual content provides the narrative, broken into digestible paragraphs within styled containers (Method: HTML/Tailwind). Interactive "Artifacts" are visually distinct HTML elements that, when clicked, reveal a *random* hidden lore detail from a predefined list of up to 8 phrases, encouraging active exploration with a "Parabéns" message (Method: Vanilla JS toggle, CSS for visual state, JS for robust dynamic height calculation). NEW interactive curiosity modules are added within narrative sections: a 'reveal-button' triggers the display of a 'reveal-content' paragraph with a smooth height/opacity transition, making the curiosities an integrated part of the narrative (Method: Vanilla JS toggle, CSS for transition, JS for robust dynamic height calculation). The core interactive element, "Dragon's Prophecy," now reveals one of 15 *predefined* mystical prophecies, providing a consistent and curated experience (Goal: Engage/Reveal Lore, Method: Vanilla JS for random content selection, CSS for transition, JS for robust dynamic height calculation). Font sizes for dynamic content adjusted significantly and new font family (Noto Serif SC) applied for compactness and elegance. NO SVG/Mermaid confirmed. -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <style>
+        body {
+            background-color: #FDF5E6; /* Old Lace - A very light, warm background */
+            color: #333333;
+            font-family: 'Merriweather', serif;
+            overflow-x: hidden; /* Prevent horizontal scrolling */
+        }
+        .font-title {
+            font-family: 'Cinzel', serif;
+        }
+        .font-chinese {
+            font-family: 'Noto Serif SC', serif;
+        }
+        .text-red-primary { color: #8B0000; } /* Dark Red */
+        .bg-red-accent { background-color: #A52A2A; } /* Brownish Red */
+        .border-gold { border-color: #DAA520; } /* Goldenrod */
+        .text-gold-accent { color: #DAA520; }
+
+        #animated-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 0;
+            pointer-events: none;
+            opacity: 0.1; /* Subtle animation */
+        }
+        .content-wrapper {
+            position: relative;
+            z-index: 1;
+        }
+        .hero-section {
+            background: linear-gradient(to bottom right, #8B0000, #A52A2A, #DAA520); /* Dynamic Red/Gold gradient */
+            background-size: 150% 150%; /* Larger to allow animation */
+            animation: gradientShift 15s ease infinite; /* Smooth gradient shift */
+            position: relative;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+            overflow: hidden;
+        }
+        @keyframes gradientShift {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+        .hero-text-container {
+            max-width: 5xl;
+            margin: 0 auto;
+            padding: 4rem 2rem;
+            text-align: center;
+        }
+        .fade-in-section {
+            opacity: 0;
+            transform: translateY(30px);
+            transition: opacity 1s ease-out, transform 1s ease-out;
+        }
+        .fade-in-section.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        .story-section {
+            background-color: rgba(255, 255, 255, 0.95);
+            border-radius: 1rem;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+            padding: 2.5rem;
+            margin-bottom: 3rem;
+            border: 1px solid #DAA520;
+        }
+        .interactive-artifact {
+            background-color: #DAA520; /* Goldenrod */
+            color: #8B0000; /* Dark Red */
+            border-radius: 0.75rem;
+            padding: 1rem;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+            font-family: 'Noto Serif SC', serif; /* Changed font family */
+            font-weight: 700;
+        }
+        .interactive-artifact:hover {
+            transform: translateY(-5px) scale(1.02);
+            box-shadow: 0 6px 12px rgba(0,0,0,0.3);
+        }
+        .artifact-detail {
+            max-height: 0;
+            opacity: 0;
+            overflow: hidden;
+            transition: max-height 0.7s ease-out, opacity 0.7s ease-out;
+            padding-top: 0;
+            padding-bottom: 0;
+            color: #333333;
+            background-color: #FFFACD;
+            border-radius: 0.5rem;
+            margin-top: 0.5rem;
+            border: 1px solid #DAA520;
+            font-size: 0.75rem; /* Further reduced */
+            line-height: 1.4;
+            padding-left: 1rem;
+            padding-right: 1rem;
+            font-family: 'Noto Serif SC', serif; /* Changed font family */
+        }
+        .artifact-detail.active {
+            max-height: 9999px; /* Will be set by JS dynamically */
+            opacity: 1;
+            padding-top: 1rem;
+            padding-bottom: 1rem;
+        }
+        .dragon-button {
+            background: linear-gradient(45deg, #8B0000, #A52A2A);
+            color: #FFD700;
+            border: 2px solid #FFD700;
+            border-radius: 9999px;
+            padding: 1rem 2.5rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.25);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            font-family: 'Cinzel', serif;
+        }
+        .dragon-button:hover {
+            transform: translateY(-3px) scale(1.02);
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.35);
+        }
+        .dragon-button:active {
+            transform: translateY(0);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+        }
+        
+        /* Styles for curiosity reveal boxes */
+        .curiosity-reveal-box {
+            background-color: rgba(255, 250, 205, 0.9);
+            border: 2px solid #DAA520;
+            border-radius: 0.75rem;
+            padding: 1rem;
+            margin-top: 2rem;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        .reveal-button {
+            background: none;
+            border: none;
+            padding: 0;
+            margin: 0;
+            color: #8B0000;
+            font-family: 'Noto Serif SC', serif; /* Changed font family */
+            font-weight: 700;
+            cursor: pointer;
+            width: 100%;
+            text-align: left;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            transition: color 0.3s ease;
+        }
+        .reveal-button:hover {
+            color: #DAA520;
+        }
+        .arrow-icon {
+            transition: transform 0.3s ease;
+        }
+        .arrow-icon.rotated {
+            transform: rotate(180deg);
+        }
+        .reveal-content {
+            max-height: 0;
+            opacity: 0;
+            overflow: hidden;
+            transition: max-height 0.7s ease-out, opacity 0.7s ease-out, padding 0.7s ease-out;
+            padding-top: 0;
+            font-size: 0.8rem; /* Further reduced */
+            line-height: 1.5;
+            color: #4A4A4A;
+            font-family: 'Noto Serif SC', serif; /* Changed font family */
+        }
+        .reveal-content.active {
+            max-height: 9999px; /* Will be set by JS dynamically */
+            opacity: 1;
+            padding-top: 1rem;
+        }
+        /* Prophecy Display specific styles */
+        #prophecyDisplay {
+            max-height: 0;
+            opacity: 0;
+            overflow: hidden;
+            transition: max-height 0.7s ease-out, opacity 0.7s ease-out, padding 0.7s ease-out;
+            padding-top: 0;
+            padding-bottom: 0;
+        }
+        #prophecyDisplay.active {
+            max-height: 9999px; /* Will be set by JS dynamically */
+            opacity: 1;
+            padding-top: 1.5rem;
+            padding-bottom: 1.5rem;
+        }
+        #prophecyText {
+            text-align: center;
+            font-size: 0.95rem; /* Adjusted for better fit */
+            font-family: 'Noto Serif SC', serif; /* Changed font family */
+        }
+    </style>
+</head>
+<body class="selection:bg-red-200 selection:text-red-900">
+
+    <canvas id="animated-canvas"></canvas>
+
+    <div class="content-wrapper">
+
+        <section class="hero-section">
+            <div class="hero-text-container">
+                <h1 class="font-title text-5xl md:text-7xl lg:text-8xl mb-6 fade-in-section text-gold-accent">
+                    A Lenda do Dragão e a Lótus
+                </h1>
+                <p class="font-chinese text-2xl md:text-4xl italic mb-10 fade-in-section" style="transition-delay: 300ms;">
+                    Contos de sabedoria e beleza do antigo Império Celestial.
+                </p>
+                <div class="opacity-0 fade-in-section" style="transition-delay: 600ms;">
+                    <!-- No scroll down arrow as requested -->
+                </div>
+            </div>
+        </section>
+
+        <main class="py-16 md:py-24 bg-white/95">
+
+            <section class="max-w-6xl mx-auto px-6 mb-16 md:mb-24 fade-in-section story-section">
+                <h2 class="font-title text-4xl text-red-primary text-center mb-8">O Reino Antigo</h2>
+                <div class="grid grid-cols-1 gap-10 items-center">
+                    <div>
+                        <p class="text-lg leading-relaxed text-gray-700 mb-6">
+                            Em tempos imemoriais, nas terras vastas e majestosas do Império Celestial, onde rios de jade serpenteavam por vales floridos e montanhas tocavam o céu, existia um reino de profunda sabedoria e tradição. Era um lugar onde a harmonia era valorizada acima de tudo, e a natureza sussurrava segredos antigos aos corações puros.
+                        </p>
+                        <p class="text-lg leading-relaxed text-gray-700">
+                            Neste cenário de beleza indescritível, a vida fluía em ciclos de paz e reflexão, guiada pelos ensinamentos dos ancestrais e pela reverência aos espíritos da terra. Templos dourados pontilhavam a paisagem, abrigando pergaminhos de conhecimento e a chama eterna da fé.
+                        </p>
+                        <div class="curiosity-reveal-box mt-8 p-4 bg-red-50 border border-gold rounded-lg shadow-md">
+                            <button class="reveal-button text-red-primary font-bold hover:text-gold-accent flex items-center justify-between w-full text-lg">
+                                <span>✨ Um Sussurro do Passado</span>
+                                <span class="arrow-icon transition-transform duration-300 transform rotate-0">▼</span>
+                            </button>
+                            <p class="reveal-content text-gray-700 mt-3 text-base leading-relaxed">
+                                Boatos dizem que as paredes deste templo guardam os ecos de mantras cantados por mil gerações, capazes de purificar a alma de quem ouve e revelar a localização de rios de jade escondidos.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section class="max-w-6xl mx-auto px-6 mb-16 md:mb-24 fade-in-section story-section">
+                <h2 class="font-title text-4xl text-red-primary text-center mb-8">A Princesa da Flor de Lótus</h2>
+                <div class="grid grid-cols-1 gap-10 items-center">
+                    <div>
+                        <p class="text-lg leading-relaxed text-gray-700 mb-6">
+                            No coração deste reino, vivia a Princesa Mei Li, cujo nome significava "Bela Lótus". Sua beleza não residia apenas em sua aparência, mas em sua alma serena e sua inabalável compaixão. Ela passava seus dias meditando à beira dos lagos, onde flores de lótus desabrochavam em cores vibrantes, e seus pensamentos eram puros como a água cristalina.
+                        </p>
+                        <p class="text-lg leading-relaxed text-gray-700">
+                            Mei Li possuía um coração gentil e uma conexão profunda com a natureza, compreendendo a linguagem do vento e a melodia dos riachos. Seus conselhos eram procurados por todos, e sua presença trazia calma e esperança mesmo nos momentos mais turbulentos.
+                        </p>
+                        <div class="curiosity-reveal-box mt-8 p-4 bg-red-50 border border-gold rounded-lg shadow-md">
+                            <button class="reveal-button text-red-primary font-bold hover:text-gold-accent flex items-center justify-between w-full text-lg">
+                                <span>🌿 Lendas da Lótus</span>
+                                <span class="arrow-icon transition-transform duration-300 transform rotate-0">▼</span>
+                            </button>
+                            <p class="reveal-content text-gray-700 mt-3 text-base leading-relaxed">
+                                Narram as lendas que as pétalas de lótus ao redor da Princesa desabrochavam conforme a pureza de seu coração, irradiando luz em tempos de angústia e curando a melancolia.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section class="max-w-6xl mx-auto px-6 mb-16 md:mb-24 fade-in-section story-section">
+                <h2 class="font-title text-4xl text-red-primary text-center mb-8">O Dragão Sussurrante</h2>
+                <div class="grid grid-cols-1 gap-10 items-center">
+                    <div>
+                        <p class="text-lg leading-relaxed text-gray-700 mb-6">
+                            Nas montanhas mais altas, aninhado entre os picos enevoados e as nuvens antigas, morava um dragão lendário. Não era um dragão de fúria ou destruição, mas o Dragão Sussurrante, guardião da sabedoria ancestral e dos segredos do cosmos. Ele falava através do vento, suas mensagens ecoando nas folhas das árvores e no murmúrio dos rios.
+                        </p>
+                        <p class="text-lg leading-relaxed text-gray-700">
+                            Apenas aqueles com corações puros e mentes abertas podiam decifrar seus sussurros, e a Princesa Mei Li era uma delas. Ela frequentemente subia aos picos, não com medo, mas com reverência, buscando as verdades que o dragão compartilhava.
+                        </p>
+                        <div class="curiosity-reveal-box mt-8 p-4 bg-red-50 border border-gold rounded-lg shadow-md">
+                            <button class="reveal-button text-red-primary font-bold hover:text-gold-accent flex items-center justify-between w-full text-lg">
+                                <span>☁️ Segredos das Nuvens</span>
+                                <span class="arrow-icon transition-transform duration-300 transform rotate-0">▼</span>
+                            </button>
+                            <p class="reveal-content text-gray-700 mt-3 text-base leading-relaxed">
+                                Dizem que o sopro do Dragão Sussurrante não era fogo, mas névoa de sonhos antigos, capaz de revelar verdades esquecidas àqueles que ousavam escutar e purificar a mente dos que o invocavam.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section class="max-w-6xl mx-auto px-6 mb-16 md:mb-24 fade-in-section story-section">
+                <h2 class="font-title text-4xl text-red-primary text-center mb-8">Artefatos da Sabedoria</h2>
+                <p class="text-lg leading-relaxed text-gray-700 text-center mb-10 max-w-3xl mx-auto">
+                    Toque nos artefatos antigos para revelar fragmentos de conhecimento e lendas escondidas nas profundezas do reino. Cada toque revela uma nova perspectiva!
+                </p>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                    <div class="interactive-artifact" data-artifact-id="jade-pendant">
+                        Pingente de Jade
+                        <p class="artifact-detail text-sm mt-2"></p>
+                    </div>
+                    <div class="interactive-artifact" data-artifact-id="silk-scroll">
+                        Pergaminho de Seda Antigo
+                        <p class="artifact-detail text-sm mt-2"></p>
+                    </div>
+                    <div class="interactive-artifact" data-artifact-id="lotus-fan">
+                        Leque de Lótus
+                        <p class="artifact-detail text-sm mt-2"></p>
+                    </div>
+                </div>
+            </section>
+
+            <section class="max-w-3xl mx-auto px-6 mb-16 md:mb-24 text-center fade-in-section p-8 bg-white/70 backdrop-blur-sm rounded-2xl shadow-lg border border-gold">
+                <h2 class="font-title text-4xl text-red-primary mb-4">🐉 Profecia do Dragão 🐉</h2>
+                <p class="text-lg leading-relaxed text-gray-700 mb-8">
+                    Ouvir um sussurro do Dragão Sussurrante é receber uma parcela da antiga sabedoria. Peça por uma profecia sobre o destino ou a verdade universal.
+                </p>
+                <button id="generateProphecyBtn" class="dragon-button">
+                    Pedir uma Profecia
+                </button>
+                <div id="prophecyDisplay" class="mt-8 p-6 bg-red-50 rounded-lg text-red-800 italic shadow-inner border border-red-200">
+                    <p id="prophecyText"></p>
+                    <div id="loadingProphecy" class="mt-4 hidden">
+                        <div class="animate-spin rounded-full h-12 w-12 border-b-4 border-red-primary mx-auto"></div>
+                        <p class="text-base text-gray-600 mt-3 font-chinese">O dragão está reunindo seus pensamentos...</p>
+                    </div>
+                </div>
+            </section>
+
+            <section class="max-w-6xl mx-auto px-6 mb-16 md:mb-24 fade-in-section story-section">
+                <h2 class="font-title text-4xl text-red-primary text-center mb-8">A Busca pela Harmonia</h2>
+                <div class="grid grid-cols-1 gap-10 items-center">
+                    <div>
+                        <p class="text-lg leading-relaxed text-gray-700 mb-6">
+                            A harmonia do reino foi testada por desafios, mas a Princesa Mei Li, guiada pelos sussurros do Dragão, sempre encontrou o caminho. Sua jornada não era de batalhas, mas de compreensão, paciência e a inabalável crença na bondade.
+                        </p>
+                        <p class="text-lg leading-relaxed text-gray-700">
+                            Juntos, a pureza da lótus e a sabedoria do dragão formavam um equilíbrio perfeito, mostrando que a verdadeira força reside na gentileza e no conhecimento.
+                        </p>
+                        <div class="curiosity-reveal-box mt-8 p-4 bg-red-50 border border-gold rounded-lg shadow-md">
+                            <button class="reveal-button text-red-primary font-bold hover:text-gold-accent flex items-center justify-between w-full text-lg">
+                                <span>🦋 O Caminho Secreto</span>
+                                <span class="arrow-icon transition-transform duration-300 transform rotate-0">▼</span>
+                            </button>
+                            <p class="reveal-content text-gray-700 mt-3 text-base leading-relaxed">
+                                Contam os sábios que, ao caminhar por esta trilha ao amanhecer, os puros de coração podiam ver vislumbres de seu próprio destino, guiados por borboletas de seda que sussurravam os segredos da harmonia.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+        </main>
+
+        <footer class="text-center py-16 md:py-24 bg-red-primary text-gold-accent shadow-inner">
+            <h3 class="font-title text-3xl md:text-4xl mb-6 fade-in-section">
+                Que a Sabedoria Antiga Guie Seus Passos.
+            </h3>
+            <p class="font-chinese text-lg md:text-xl text-red-100 fade-in-section" style="transition-delay: 150ms;">
+                "A verdadeira luz reside na compreensão do próprio caminho."
+            </p>
+        </footer>
+
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const canvas = document.getElementById('animated-canvas');
+            const ctx = canvas.getContext('2d');
+            let particles = [];
+            const colors = ['rgba(139, 0, 0, ', 'rgba(218, 165, 32, ', 'rgba(255, 223, 0, ']; // Dark Red, Goldenrod, Gold
+
+            function resizeCanvas() {
+                canvas.width = window.innerWidth;
+                canvas.height = window.innerHeight;
+            }
+
+            class Particle {
+                constructor() {
+                    this.x = Math.random() * canvas.width;
+                    this.y = Math.random() * canvas.height;
+                    this.size = Math.random() * 2 + 0.5;
+                    this.speedX = (Math.random() * 0.8 - 0.4) * 0.5; // Slower, subtle horizontal movement
+                    this.speedY = (Math.random() * 1.5 + 0.5) * 0.5; // Slower, subtle vertical movement
+                    this.alpha = Math.random() * 0.4 + 0.2; // Subtle opacity
+                    this.color = colors[Math.floor(Math.random() * colors.length)];
+                    this.rotation = Math.random() * Math.PI * 2; // For subtle rotation effect
+                    this.rotationSpeed = (Math.random() * 0.02 - 0.01);
+                }
+                update() {
+                    this.x += this.speedX;
+                    this.y += this.speedY;
+                    this.alpha -= 0.0015; // Slow fade out
+                    this.rotation += this.rotationSpeed;
+
+                    if (this.y > canvas.height + this.size || this.alpha <= 0) {
+                        this.reset();
+                    }
+                    if (this.x > canvas.width + this.size) {
+                        this.x = -this.size;
+                    } else if (this.x < -this.size) {
+                        this.x = canvas.width + this.size;
+                    }
+                }
+                reset() {
+                    this.x = Math.random() * canvas.width;
+                    this.y = -this.size; // Start from top
+                    this.size = Math.random() * 2 + 0.5;
+                    this.speedX = (Math.random() * 0.8 - 0.4) * 0.5;
+                    this.speedY = (Math.random() * 1.5 + 0.5) * 0.5;
+                    this.alpha = Math.random() * 0.4 + 0.2;
+                    this.color = colors[Math.floor(Math.random() * colors.length)];
+                    this.rotation = Math.random() * Math.PI * 2;
+                    this.rotationSpeed = (Math.random() * 0.02 - 0.01);
+                }
+                draw() {
+                    ctx.save();
+                    ctx.translate(this.x, this.y);
+                    ctx.rotate(this.rotation);
+                    ctx.fillStyle = this.color + this.alpha + ')';
+                    ctx.beginPath();
+                    // Draw a subtle diamond/star shape instead of circle for more mystical feel
+                    ctx.moveTo(0, -this.size * 1.5);
+                    ctx.lineTo(this.size, 0);
+                    ctx.lineTo(0, this.size * 1.5);
+                    ctx.lineTo(-this.size, 0);
+                    ctx.closePath();
+                    ctx.fill();
+                    ctx.restore();
+                }
+            }
+
+            function initParticles() {
+                particles = [];
+                let numberOfParticles = (canvas.width * canvas.height) / 18000;
+                for (let i = 0; i < numberOfParticles; i++) {
+                    particles.push(new Particle());
+                }
+            }
+
+            function animate() {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                for (let i = 0; i < particles.length; i++) {
+                    particles[i].update();
+                    particles[i].draw();
+                }
+                requestAnimationFrame(animate);
+            }
+
+            window.addEventListener('resize', () => {
+                resizeCanvas();
+                initParticles();
+            });
+
+            resizeCanvas();
+            initParticles();
+            animate();
+
+            // Intersection Observer for fade-in effect
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('visible');
+                    }
+                });
+            }, { threshold: 0.1, rootMargin: "0px 0px -50px 0px" });
+
+            const sections = document.querySelectorAll('.fade-in-section');
+            sections.forEach(section => {
+                observer.observe(section);
+            });
+
+            // Helper function to handle reveal/hide logic for all dynamic content
+            function toggleContentDisplay(element, isActive) {
+                if (isActive) {
+                    element.style.maxHeight = '0px';
+                    element.style.opacity = '0';
+                    // Temporarily set height to auto to measure actual scrollHeight
+                    element.style.transition = 'none'; // Disable transition temporarily
+                    element.style.maxHeight = 'auto'; // Allow content to expand fully for scrollHeight calculation
+                    let height = element.scrollHeight; // Get the actual height
+                    element.style.maxHeight = '0px'; // Reset to 0
+                    element.style.transition = ''; // Re-enable transition
+                    
+                    // Force a reflow
+                    element.offsetWidth; 
+                    
+                    // Now animate to the correct height
+                    element.style.maxHeight = height + 'px';
+                    element.style.opacity = '1';
+                } else {
+                    element.style.maxHeight = element.scrollHeight + 'px'; // Set current height for smooth collapse
+                    element.style.opacity = '1';
+                    // Force a reflow before collapsing
+                    element.offsetWidth; 
+
+                    requestAnimationFrame(() => {
+                        element.style.maxHeight = '0px';
+                        element.style.opacity = '0';
+                    });
+                    
+                    // Clear text content after transition for artifact details
+                    if (element.classList.contains('artifact-detail')) {
+                        setTimeout(() => { element.textContent = ''; }, 700); 
+                    }
+                }
+            }
+
+            // Interactive Artifacts with random phrases
+            const artifactPhrases = {
+                'jade-pendant': [
+                    "Parabéns! Você encontrou um fragmento de sabedoria: A bondade ressoa nas pedras mais puras, ecoando a gentileza que Mei Li irradiava.",
+                    "Parabéns! Você encontrou um fragmento de conhecimento: Cada toque no jade revela a proteção dos espíritos da montanha, um escudo invisível contra a escuridão.",
+                    "Parabéns! Você encontrou um fragmento de verdade: O brilho do jade lunar reflete a pureza da alma, guiando os corações perdidos à sua própria luz.",
+                    "Parabéns! Você encontrou um fragmento de paz: Uma joia que guarda sussurros de calma e serenidade interior, para quem busca tranquilidade.",
+                    "Parabéns! Você encontrou um fragmento de força: No cerne deste pingente, reside a inabalável força da compaixão, sólida como a montanha.",
+                    "Parabéns! Você encontrou um fragmento de destino: Presente dos céus, o jade concede clareza à mente e verdade ao espírito, revelando seu caminho.",
+                    "Parabéns! Você encontrou um fragmento de cura: A energia do jade abraça, curando feridas invisíveis e restaurando a fé na jornada.",
+                    "Parabéns! Você encontrou um fragmento de beleza: Um lembrete que a verdadeira luz reside em ver a beleza em cada pequeno gesto e na pureza da alma."
+                ],
+                'silk-scroll': [
+                    "Parabéns! Você encontrou um fragmento de sabedoria: As palavras antigas do dragão fluem como rios de conhecimento, desvendando os mistérios da respiração do universo.",
+                    "Parabéns! Você encontrou um fragmento de cosmos: Desvende os segredos do cosmos, onde cada ideograma é um passo na escada para a iluminação.",
+                    "Parabéns! Você encontrou um fragmento de fluidez: Este pergaminho contém a essência do vento, revelando como a leveza pode mover montanhas e rios.",
+                    "Parabéns! Você encontrou um fragmento de tempo: A tinta dourada narra a melodia do tempo, ensinando que a paciência é a chave para toda revelação.",
+                    "Parabéns! Você encontrou um fragmento de legado: Uma mensagem do Dragão, lembrando que o conhecimento é um tesouro que cresce ao ser compartilhado.",
+                    "Parabéns! Você encontrou um fragmento de verdade oculta: Cada dobra revela uma verdade esquecida, despertando a mente para a grandiosidade do mundo invisível.",
+                    "Parabéns! Você encontrou um fragmento de energia: As caligrafias sagradas vibram com a energia ancestral, conectando o leitor aos sábios de outrora.",
+                    "Parabéns! Você encontrou um fragmento de caminho: Um mapa para a alma, guiando o espírito através das paisagens internas da iluminação e do autoconhecimento."
+                ],
+                'lotus-fan': [
+                    "Parabéns! Você encontrou um fragmento de clareza: O leque de lótus não afasta apenas o calor, mas também as nuvens da incerteza, trazendo clareza de pensamento.",
+                    "Parabéns! Você encontrou um fragmento de paz: Cada movimento deste leque invoca uma brisa de tranquilidade, acalmando a mente e purificando o coração.",
+                    "Parabéns! Você encontrou um fragmento de serenidade: As pétalas de lótus lunar guardam a essência da calma, ensinando a encontrar serenidade no caos do mundo.",
+                    "Parabéns! Você encontrou um fragmento de revelação: Um simples agitar do leque pode dissipar as ilusões, revelando a verdade por trás da névoa que cega.",
+                    "Parabéns! Você encontrou um fragmento de graça: O toque do leque traz a leveza da flor, lembrando que a verdadeira graça reside na simplicidade e na humildade.",
+                    "Parabéns! Você encontrou um fragmento de renovação: Respire fundo com o leque, e sinta a energia do lótus fluir, renovando o corpo e a mente para novos começos.",
+                    "Parabéns! Você encontrou um fragmento de respostas: Para cada dúvida, uma brisa suave do leque traz a resposta, se a alma estiver atenta aos sinais.",
+                    "Parabéns! Você encontrou um fragmento de superação: O sussurro do leque conta histórias de superação, ensinando que a beleza floresce mesmo na lama mais profunda."
+                ]
+            };
+
+            document.querySelectorAll('.interactive-artifact').forEach(artifact => {
+                artifact.addEventListener('click', () => {
+                    const detail = artifact.querySelector('.artifact-detail');
+                    const artifactId = artifact.dataset.artifactId;
+                    const phrases = artifactPhrases[artifactId];
+                    const randomPhrase = phrases[Math.floor(Math.random() * phrases.length)];
+
+                    document.querySelectorAll('.artifact-detail.active').forEach(openDetail => {
+                        if (openDetail !== detail) {
+                            openDetail.classList.remove('active');
+                            toggleContentDisplay(openDetail, false);
+                        }
+                    });
+
+                    if (detail.classList.contains('active')) {
+                        detail.classList.remove('active');
+                        toggleContentDisplay(detail, false);
+                    } else {
+                        detail.textContent = randomPhrase;
+                        detail.classList.add('active');
+                        toggleContentDisplay(detail, true);
+                    }
+                });
+            });
+
+            // Reveal Curiosities in narrative sections
+            document.querySelectorAll('.reveal-button').forEach(button => {
+                button.addEventListener('click', () => {
+                    const content = button.nextElementSibling;
+                    const arrow = button.querySelector('.arrow-icon');
+
+                    if (content.classList.contains('active')) {
+                        content.classList.remove('active');
+                        toggleContentDisplay(content, false);
+                        arrow.classList.remove('rotated');
+                    } else {
+                        content.classList.add('active');
+                        toggleContentDisplay(content, true);
+                        arrow.classList.add('rotated');
+                    }
+                });
+            });
+
+            // Dragon Prophecies (predefined list)
+            const dragonProphecies = [
+                "Nas teias invisíveis do destino, cada fio se entrelaça com o sopro do dragão, revelando que a maior liberdade reside em aceitar o fluxo eterno dos céus.",
+                "A verdadeira sabedoria não se encontra nos livros empoeirados, mas no murmúrio dos rios ancestrais e no silêncio profundo das montanhas, onde o tempo desvela suas verdades mais antigas.",
+                "Quando a lótus desabrocha na lama mais profunda, lembre-se: a beleza perfeita emerge da mais humilde das origens, purificando o espírito e elevando a alma ao despertar.",
+                "O equilíbrio entre o yin e o yang não é uma ausência de caos, mas a dança harmoniosa entre luz e sombra, aceitando que a escuridão precede a mais gloriosa das auroras.",
+                "Cada passo na sua jornada é um traço indelével no pergaminho do tempo. Não se apresse, pois a beleza não está apenas no destino, mas na paisagem que você cria ao caminhar com propósito.",
+                "Olhe para dentro, pois o universo que buscas reside no seu próprio coração. As montanhas são espelhos e os rios, veias de sua própria verdade esquecida, esperando serem redescobertas.",
+                "Assim como a água esculpe a pedra não pela força bruta, mas pela persistência suave, a paciência é a virtude que revela os maiores tesouros ocultos da vida, aguardando o momento certo.",
+                "O mundo que vês é um véu de ilusões tecidas pelo tempo. Apenas quando o coração se aquietar e a mente se esvaziar, o sussurro da realidade universal te alcançará em sua plenitude.",
+                "Somos todos fios entrelaçados na grande tapeçaria do universo. O dragão une os céus à terra, lembrando-nos que tudo e todos estão intrinsecamente conectados por um laço invisível e eterno.",
+                "A mudança é a única constante no rio da existência. Não lute contra a corrente, mas aprenda a fluir com ela, pois na adaptabilidade reside a força inabalável de um bambu ao vento.",
+                "Na quietude de um lago sem ondas, o reflexo do céu é perfeito e inalterado. Busque a serenidade interior para que a sabedoria do mundo se revele em sua plenitude e clareza.",
+                "A verdadeira coragem não reside em enfrentar o perigo com espada em punho, mas em abraçar o desconhecido com um coração aberto e uma mente sem preconceitos, pronto para aprender.",
+                "A colheita do inverno não pode ser forçada na primavera. Aceite os ciclos naturais da vida, pois cada estação traz sua própria beleza singular e sua própria lição a ser aprendida com gratidão.",
+                "A estrela mais brilhante não está no céu longínquo, mas no recanto mais profundo de sua própria alma. Deixe-a brilhar, e ela iluminará o caminho não só para você, mas para todos ao seu redor.",
+                "O eco de seus passos ressoa através dos milênios. O que você planta hoje, colhe na eternidade. Construa um legado de amor, sabedoria e compaixão que transcenda o tempo."
+            ];
+
+            const generateProphecyBtn = document.getElementById('generateProphecyBtn');
+            const prophecyDisplay = document.getElementById('prophecyDisplay');
+            const prophecyText = document.getElementById('prophecyText');
+            const loadingProphecy = document.getElementById('loadingProphecy');
+
+            generateProphecyBtn.addEventListener('click', () => {
+                prophecyText.textContent = '';
+                loadingProphecy.classList.remove('hidden');
+                generateProphecyBtn.disabled = true;
+                generateProphecyBtn.textContent = 'Decifrando...';
+
+                setTimeout(() => {
+                    const randomProphecy = dragonProphecies[Math.floor(Math.random() * dragonProphecies.length)];
+                    prophecyText.textContent = randomProphecy;
+
+                    loadingProphecy.classList.add('hidden');
+                    generateProphecyBtn.disabled = false;
+                    generateProphecyBtn.textContent = 'Pedir uma Profecia';
+
+                    prophecyDisplay.classList.add('active');
+                    toggleContentDisplay(prophecyDisplay, true);
+                }, 1000);
+            });
+        });
+    </script>
+</body>
+</html>
